@@ -2171,6 +2171,19 @@ impl Bucket {
             errors: Vec::new(),
         };
 
+        // Strip leading '/' from keys to match library convention.
+        // Other methods (put_object, delete_object, etc.) strip the leading
+        // slash when building the URL; we do the same for the XML body.
+        let objects: Vec<ObjectIdentifier> = objects
+            .into_iter()
+            .map(|mut obj| {
+                if let Some(stripped) = obj.key.strip_prefix('/') {
+                    obj.key = stripped.to_string();
+                }
+                obj
+            })
+            .collect();
+
         for chunk in objects.chunks(1000) {
             let data = DeleteObjectsRequest {
                 objects: chunk.to_vec(),

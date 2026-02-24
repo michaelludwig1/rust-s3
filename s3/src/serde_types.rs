@@ -439,7 +439,11 @@ pub struct DeleteObjectsRequest {
 
 impl fmt::Display for DeleteObjectsRequest {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "<Delete>").expect("Can't fail");
+        write!(
+            f,
+            r#"<Delete xmlns="http://s3.amazonaws.com/doc/2006-03-01/">"#
+        )
+        .expect("Can't fail");
         if self.quiet {
             write!(f, "<Quiet>true</Quiet>").expect("Can't fail");
         }
@@ -447,7 +451,8 @@ impl fmt::Display for DeleteObjectsRequest {
             let escaped_key = quick_xml::escape::escape(&obj.key);
             write!(f, "<Object><Key>{}</Key>", escaped_key).expect("Can't fail");
             if let Some(ref vid) = obj.version_id {
-                write!(f, "<VersionId>{}</VersionId>", vid).expect("Can't fail");
+                let escaped_vid = quick_xml::escape::escape(vid);
+                write!(f, "<VersionId>{}</VersionId>", escaped_vid).expect("Can't fail");
             }
             write!(f, "</Object>").expect("Can't fail");
         }
@@ -461,7 +466,7 @@ impl DeleteObjectsRequest {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.to_string().len() == 0
+        self.objects.is_empty()
     }
 }
 
@@ -989,7 +994,7 @@ mod test {
         let se = request.to_string();
         assert_eq!(
             se,
-            r#"<Delete><Object><Key>file1.txt</Key></Object><Object><Key>file2.txt</Key></Object><Object><Key>file3.txt</Key><VersionId>v1</VersionId></Object></Delete>"#
+            r#"<Delete xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Object><Key>file1.txt</Key></Object><Object><Key>file2.txt</Key></Object><Object><Key>file3.txt</Key><VersionId>v1</VersionId></Object></Delete>"#
         )
     }
 
@@ -1003,7 +1008,7 @@ mod test {
         let se = request.to_string();
         assert_eq!(
             se,
-            r#"<Delete><Quiet>true</Quiet><Object><Key>file1.txt</Key></Object></Delete>"#
+            r#"<Delete xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Quiet>true</Quiet><Object><Key>file1.txt</Key></Object></Delete>"#
         )
     }
 
@@ -1017,7 +1022,7 @@ mod test {
         let se = request.to_string();
         assert_eq!(
             se,
-            r#"<Delete><Object><Key>file&amp;name&lt;&gt;.txt</Key></Object></Delete>"#
+            r#"<Delete xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Object><Key>file&amp;name&lt;&gt;.txt</Key></Object></Delete>"#
         )
     }
 
